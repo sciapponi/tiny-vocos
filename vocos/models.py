@@ -169,6 +169,7 @@ class VocosBackbone(Backbone):
         return x
 
 
+
 class VocosResNetBackbone(Backbone):
     """
     Vocos backbone module built with ResBlocks.
