@@ -44,7 +44,7 @@ class XiVocosBackboneFixedChannels(Backbone):
         x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
         # print(x.shape)
         x = self.first_layer(x)
-        print(x.shape)
+        # print(x.shape)
         skip = self.net[0](x)
 
         for conv_block in self.net[1:]:
@@ -68,7 +68,7 @@ class XiVocosBackbone(Backbone):
         last_size = dims[0]
         for i in dims[1:]:
             up.append(XiConv(c_in=last_size, c_out=i, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False))
-            print(i)
+            # print(i)
             last_size = i
         self.up = nn.ModuleList(up)
 
@@ -76,7 +76,7 @@ class XiVocosBackbone(Backbone):
         down = []
         dims = dims[::-1]
         last_size = dims[0]
-        print(last_size)
+        # print(last_size)
         for i in dims[1:]:
             down.append(XiConv(c_in=last_size, c_out=i, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False))
             last_size = i
@@ -89,7 +89,7 @@ class XiVocosBackbone(Backbone):
         # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
         x = x[:,None,:,:]
         x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange to convolve on frequencies
-        print(x.shape)
+        # print(x.shape)
         x = self.first_layer(x)
         skip = self.up[0](x)
         for conv_block in self.up[1:]:
