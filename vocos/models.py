@@ -51,7 +51,7 @@ class XiVocosBackboneFixedChannels(Backbone):
             skip = conv_block(skip)
 
 
-        return skip
+        return skip.transpose(1,2)
 
 
 class XiVocosBackbone(Backbone):
