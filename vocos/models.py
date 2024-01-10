@@ -27,16 +27,15 @@ class Backbone(nn.Module):
 
 class XiVocosBackboneFixedChannels(Backbone):
 
-    def __init__(self, freqs, dim = 128, num_layers = 8):
+    def __init__(self, input_channels, intermediate_dim=0, dim = 128, num_layers = 8):
         super().__init__()
-        self.first_layer = XiConv(c_in=freqs, c_out=dim, kernel_size=(3,1), pool=1, skip_res=None, skip_tensor_in=False)
+        self.first_layer = XiConv(c_in=input_channels, c_out=dim, kernel_size=(3,1), pool=1, skip_res=None, skip_tensor_in=False)
         self.net = nn.ModuleList(
             [
                 XiConv(c_in=dim, c_out=dim, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False)
                 for _ in range(num_layers)
             ]
         )
-        self.last_layer = BlendChannels()
 
     def forward(self, input):
         x = input  # batch x freqs x time
