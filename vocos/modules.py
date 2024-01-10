@@ -55,7 +55,6 @@ class ConvNeXtBlock(nn.Module):
         if self.gamma is not None:
             x = self.gamma * x
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
-
         x = residual + x
         return x
 

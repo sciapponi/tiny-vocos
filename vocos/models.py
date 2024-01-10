@@ -6,6 +6,8 @@ from torch.nn.utils import weight_norm
 
 from vocos.modules import ConvNeXtBlock, ResBlock1, AdaLayerNorm
 
+from micromind.networks.xinet import XiConv
+from einops import rearrange
 
 class Backbone(nn.Module):
     """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
@@ -13,7 +15,7 @@ class Backbone(nn.Module):
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         """
         Args:
-            x (Tensor): Input tensor of shape (B, C, L), where B is the batch size,
+            x (Tensor): Input tensor of shape (B, C,Lupo Olcelli sono attesi, oltre ai familiari, anch L), where B is the batch size,
                         C denotes output features, and L is the sequence length.
 
         Returns:
@@ -22,6 +24,84 @@ class Backbone(nn.Module):
         """
         raise NotImplementedError("Subclasses must implement the forward method.")
 
+
+class XiVocosBackboneFixedChannels(Backbone):
+
+    def __init__(self, freqs, dim = 128, num_layers = 8):
+        super().__init__()
+        self.first_layer = XiConv(c_in=freqs, c_out=dim, kernel_size=(3,1), pool=1, skip_res=None, skip_tensor_in=False)
+        self.net = nn.ModuleList(
+            [
+                XiConv(c_in=dim, c_out=dim, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False)
+                for _ in range(num_layers)
+            ]
+        )
+
+    def forward(self, input):
+        x = input  # batch x freqs x time
+        # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
+        x = x[:,None,:,:] # Add 1 channel to make 2d convs work
+        x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
+        # print(x.shape)
+        x = self.first_layer(x)
+        print(x.shape)
+        skip = self.net[0](x)
+
+        for conv_block in self.net[1:]:
+            skip = conv_block(skip)
+
+
+        return skip
+
+
+class XiVocosBackbone(Backbone):
+    def __init__(self, 
+                 freqs, 
+                 dims = [64, 128, 256]):
+        super().__init__()
+        self.first_layer = XiConv(c_in=freqs, c_out=dims[0], kernel_size=3, pool=0, skip_res=None, skip_tensor_in=False)
+
+        # Up Convolutions
+        up = []
+        last_size = dims[0]
+        for i in dims[1:]:
+            up.append(XiConv(c_in=last_size, c_out=i, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False))
+            print(i)
+            last_size = i
+        self.up = nn.ModuleList(up)
+
+        # Down Convolutions
+        down = []
+        dims = dims[::-1]
+        last_size = dims[0]
+        print(last_size)
+        for i in dims[1:]:
+            down.append(XiConv(c_in=last_size, c_out=i, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False))
+            last_size = i
+        self.down = nn.ModuleList(down)
+
+        # self.gen = Generator_XiNet(input_nc=freqs, output_nc=freqs, latent_size=128)
+        # self.last_layer = self.last_layer = BlendChannels()
+    
+    def forward(self, x):
+        # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
+        x = x[:,None,:,:]
+        x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange to convolve on frequencies
+        print(x.shape)
+        x = self.first_layer(x)
+        skip = self.up[0](x)
+        for conv_block in self.up[1:]:
+            skip = conv_block(skip)
+        
+        skip = self.down[0](skip)
+
+        for conv_block in self.down[1:]:
+            skip = conv_block(skip)
+        
+        # skip = self.last_layer(skip)
+
+        return skip
+               
 
 class VocosBackbone(Backbone):
     """
