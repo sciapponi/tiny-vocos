@@ -129,53 +129,7 @@ class XiVocosBackboneFixedChannels(Backbone):
         skip = skip.squeeze(2).transpose(1,2)
         # print(skip.shape)
         return skip
-
-class XiVocosBackbone(Backbone):
-    def __init__(self, 
-                 freqs, 
-                 dims = [64, 128, 256]):
-        super().__init__()
-        self.first_layer = XiConv(c1=freqs, c2=dims[0], k=(9,1), pool=0)
-
-        # Up Convolutions
-        up = []
-        last_size = dims[0]
-        for i in dims[1:]:
-            up.append(XiConv(c1=last_size, c2=i, k=(9,1), pool=(1,2), pool_stride=(1,2)))
-            last_size = i
-        self.up = nn.ModuleList(up)
-
-        # Down Convolutions
-        down = []
-        dims = dims[::-1]
-        last_size = dims[0]
-        for i in dims[1:]:
-            down.append(XiConv(c1=last_size, c2=i, k=(9,1)))
-            last_size = i
-        self.down = nn.ModuleList(down)
     
-    def forward(self, x):
-        # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
-        x = x[:,None,:,:]
-        x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange to convolve on frequencies
-
-        x = self.first_layer(x)
-        skip = self.up[0](x)
-
-        for conv_block in self.up[1:]:
-            skip = conv_block(skip)
-
-
-        skip = self.down[0](skip)
-        skip = Upsample(scale_factor=(1,2))(skip)
-        for conv_block in self.down[1:]:
-            skip = conv_block(skip)
-            skip = Upsample(scale_factor=(1,2))(skip)
-
-        skip = skip.squeeze(2).transpose(1,2)
-
-        return skip
-
 class VocosBackbone(Backbone):
     """
     Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
