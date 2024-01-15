@@ -103,7 +103,7 @@ class SnakeXiConv(nn.Module):
         self.compression_conv = nn.Conv2d(c1, c2//compression, 1, 1,  groups=g, padding='same', bias=False)
         self.main_conv = nn.Conv2d(c2//compression if compression>1 else c1, c2, k, s,  groups=g, padding='same' if s==1 else autopad(k, p), bias=False)
         # self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        self.act = Snake(c2//compression if compression>1 else c1)
+        self.act = Snake(1)
         
         if attention:
             if attention_lite:
