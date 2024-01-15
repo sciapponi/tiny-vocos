@@ -39,7 +39,6 @@ class SnakeXiVocosBackboneFixedChannels(Backbone):
                 for _ in range(num_layers)
             ]
         )
-        self.last_layer = BlendChannels()
 
     def forward(self, input):
         x = input  # batch x freqs x time
