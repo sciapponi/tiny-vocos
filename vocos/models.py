@@ -6,7 +6,10 @@ from torch.nn.utils import weight_norm
 
 from vocos.modules import ConvNeXtBlock, ResBlock1, AdaLayerNorm
 
-from micromind.networks.xinet import XiConv
+# from micromind.networks.xinet import XiConv
+from xinet import XiConv
+from snake import SnakeXiConv
+from utils import Upsample
 from einops import rearrange
 
 class Backbone(nn.Module):
@@ -24,15 +27,14 @@ class Backbone(nn.Module):
         """
         raise NotImplementedError("Subclasses must implement the forward method.")
 
+class SnakeXiVocosBackboneFixedChannels(Backbone):
 
-class XiVocosBackboneFixedChannels(Backbone):
-
-    def __init__(self, input_channels, intermediate_dim=0, dim = 128, num_layers = 8):
+    def __init__(self, freqs, dim = 128, num_layers = 8):
         super().__init__()
-        self.first_layer = XiConv(c_in=input_channels, c_out=dim, kernel_size=(3,1), pool=1, skip_res=None, skip_tensor_in=False)
+        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(3,1), pool=1, skip_tensor_in=False)
         self.net = nn.ModuleList(
             [
-                XiConv(c_in=dim, c_out=dim, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False)
+                SnakeXiConv(c1=dim, c2=dim, k=(3,1), pool=(1,2), pool_stride=(1,2), skip_tensor_in=False)
                 for _ in range(num_layers)
             ]
         )
@@ -44,7 +46,80 @@ class XiVocosBackboneFixedChannels(Backbone):
         x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
         # print(x.shape)
         x = self.first_layer(x)
+        skip = self.net[0](x)
+        for conv_block in self.net[1:]:
+            skip = conv_block(skip)
+
+        # skip = self.last_layer(skip.transpose(1,2))
+        skip = skip.squeeze(2).transpose(1,2)
+        # print(skip.shape)
+        return skip   
+
+class SnakeXiVocosBackbone(Backbone):
+    def __init__(self, 
+                 freqs, 
+                 dims = [64, 128, 256]):
+        super().__init__()
+        self.first_layer = SnakeXiConv(c1=freqs, c2=dims[0], k=(3,1), pool=0)
+
+        # Up Convolutions
+        up = []
+        last_size = dims[0]
+        for i in dims[1:]:
+            up.append(SnakeXiConv(c1=last_size, c2=i, k=(3,1), pool=(1,2), pool_stride=(1,2)))
+            last_size = i
+        self.up = nn.ModuleList(up)
+
+        # Down Convolutions
+        down = []
+        dims = dims[::-1]
+        last_size = dims[0]
+        for i in dims[1:]:
+            down.append(SnakeXiConv(c1=last_size, c2=i, k=(3,1)))
+            last_size = i
+        self.down = nn.ModuleList(down)
+    
+    def forward(self, x):
+        # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
+        x = x[:,None,:,:]
+        x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange to convolve on frequencies
+
+        x = self.first_layer(x)
+        skip = self.up[0](x)
+
+        for conv_block in self.up[1:]:
+            skip = conv_block(skip)
+
+
+        skip = self.down[0](skip)
+        skip = Upsample(scale_factor=(1,2))(skip)
+        for conv_block in self.down[1:]:
+            skip = conv_block(skip)
+            skip = Upsample(scale_factor=(1,2))(skip)
+
+        skip = skip.squeeze(2).transpose(1,2)
+
+        return skip
+
+class XiVocosBackboneFixedChannels(Backbone):
+
+    def __init__(self, freqs, dim = 128, num_layers = 8):
+        super().__init__()
+        self.first_layer = XiConv(c1=freqs, c2=dim, k=(9,1), pool=1)
+        self.net = nn.ModuleList(
+            [
+                XiConv(c1=dim, c2=dim, k=(9,1), pool=1)
+                for _ in range(num_layers)
+            ]
+        )
+
+    def forward(self, input):
+        x = input  # batch x freqs x time
+        # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
+        x = x[:,None,:,:] # Add 1 channel to make 2d convs work
+        x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
         # print(x.shape)
+        x = self.first_layer(x)
         skip = self.net[0](x)
 
         for conv_block in self.net[1:]:
@@ -55,20 +130,18 @@ class XiVocosBackboneFixedChannels(Backbone):
         # print(skip.shape)
         return skip
 
-
 class XiVocosBackbone(Backbone):
     def __init__(self, 
                  freqs, 
                  dims = [64, 128, 256]):
         super().__init__()
-        self.first_layer = XiConv(c_in=freqs, c_out=dims[0], kernel_size=3, pool=0, skip_res=None, skip_tensor_in=False)
+        self.first_layer = XiConv(c1=freqs, c2=dims[0], k=(9,1), pool=0)
 
         # Up Convolutions
         up = []
         last_size = dims[0]
         for i in dims[1:]:
-            up.append(XiConv(c_in=last_size, c_out=i, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False))
-            # print(i)
+            up.append(XiConv(c1=last_size, c2=i, k=(9,1), pool=(1,2), pool_stride=(1,2)))
             last_size = i
         self.up = nn.ModuleList(up)
 
@@ -76,34 +149,32 @@ class XiVocosBackbone(Backbone):
         down = []
         dims = dims[::-1]
         last_size = dims[0]
-        # print(last_size)
         for i in dims[1:]:
-            down.append(XiConv(c_in=last_size, c_out=i, kernel_size=3, pool=1, skip_res=None, skip_tensor_in=False))
+            down.append(XiConv(c1=last_size, c2=i, k=(9,1)))
             last_size = i
         self.down = nn.ModuleList(down)
-
-        # self.gen = Generator_XiNet(input_nc=freqs, output_nc=freqs, latent_size=128)
-        # self.last_layer = self.last_layer = BlendChannels()
     
     def forward(self, x):
         # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
         x = x[:,None,:,:]
         x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange to convolve on frequencies
-        # print(x.shape)
+
         x = self.first_layer(x)
         skip = self.up[0](x)
+
         for conv_block in self.up[1:]:
             skip = conv_block(skip)
-        
-        skip = self.down[0](skip)
 
+
+        skip = self.down[0](skip)
+        skip = Upsample(scale_factor=(1,2))(skip)
         for conv_block in self.down[1:]:
             skip = conv_block(skip)
-        
-        # skip = self.last_layer(skip)
+            skip = Upsample(scale_factor=(1,2))(skip)
+
+        skip = skip.squeeze(2).transpose(1,2)
 
         return skip
-               
 
 class VocosBackbone(Backbone):
     """
@@ -169,8 +240,6 @@ class VocosBackbone(Backbone):
             x = conv_block(x, cond_embedding_id=bandwidth_id)
         x = self.final_layer_norm(x.transpose(1, 2))
         return x
-
-
 
 class VocosResNetBackbone(Backbone):
     """
