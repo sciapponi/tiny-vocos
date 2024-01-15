@@ -32,10 +32,10 @@ class SnakeXiVocosBackboneFixedChannels(Backbone):
 
     def __init__(self, freqs, dim = 128, num_layers = 8):
         super().__init__()
-        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(9,1), pool=1, skip_tensor_in=False)
+        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(9,1), pool=1)
         self.net = nn.ModuleList(
             [
-                SnakeXiConv(c1=dim, c2=dim, k=(9,1), skip_tensor_in=False)
+                SnakeXiConv(c1=dim, c2=dim, k=(9,1))
                 for _ in range(num_layers)
             ]
         )
