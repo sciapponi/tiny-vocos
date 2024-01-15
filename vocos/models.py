@@ -27,17 +27,19 @@ class Backbone(nn.Module):
         """
         raise NotImplementedError("Subclasses must implement the forward method.")
 
+
 class SnakeXiVocosBackboneFixedChannels(Backbone):
 
     def __init__(self, freqs, dim = 128, num_layers = 8):
         super().__init__()
-        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(3,1), pool=1, skip_tensor_in=False)
+        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(9,1), pool=1, skip_tensor_in=False)
         self.net = nn.ModuleList(
             [
-                SnakeXiConv(c1=dim, c2=dim, k=(3,1), pool=(1,2), pool_stride=(1,2), skip_tensor_in=False)
+                SnakeXiConv(c1=dim, c2=dim, k=(9,1), skip_tensor_in=False)
                 for _ in range(num_layers)
             ]
         )
+        self.last_layer = BlendChannels()
 
     def forward(self, input):
         x = input  # batch x freqs x time
@@ -53,7 +55,7 @@ class SnakeXiVocosBackboneFixedChannels(Backbone):
         # skip = self.last_layer(skip.transpose(1,2))
         skip = skip.squeeze(2).transpose(1,2)
         # print(skip.shape)
-        return skip   
+        return skip  
 
 class SnakeXiVocosBackbone(Backbone):
     def __init__(self, 
