@@ -54,7 +54,7 @@ class MelSpectrogramFeatures(FeatureExtractor):
         if self.pad2pow2: # pad to the closest power of 2
             features_shape = features.shape
             pad_dim = 2**int(torch.log2(torch.tensor(features_shape[-1]))+1)-features_shape[-1]
-            features = torch.nn.functional.pad(features, (0, pad_dim), mode='reflect')
+            features = torch.nn.functional.pad(features, (0, pad_dim), mode='constant')
 
         return features
 
