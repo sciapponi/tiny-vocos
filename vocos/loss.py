@@ -31,7 +31,7 @@ class MelSpecReconstructionLoss(nn.Module):
         """
         mel_hat = safe_log(self.mel_spec(y_hat))
         mel = safe_log(self.mel_spec(y))
-        mel =  torch.nn.functional.pad(mel, (0,mel_hat.shape[-1]), 'constant')
+        mel =  torch.nn.functional.pad(mel, (0,mel_hat.shape[-1]-mel.shape[-1]), 'constant')
         loss = torch.nn.functional.l1_loss(mel, mel_hat)
 
         return loss
