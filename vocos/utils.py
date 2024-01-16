@@ -2,8 +2,8 @@ import torch
 from torch.nn import functional as F 
 
 class Upsample:
-    def __init__(self, scale_factor, mode="nearest"):
-        assert mode == "nearest"
+    def __init__(self, scale_factor, mode="linear"):
+        # assert mode == "nearest"
         self.scale_factor = scale_factor
         self.mode = mode
 
