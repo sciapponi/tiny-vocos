@@ -34,7 +34,7 @@ class MelSpecReconstructionLoss(nn.Module):
         
         ## Pad to same size, might remove
         # mel =  torch.nn.functional.pad(mel, (0,mel_hat.shape[-1]-mel.shape[-1]), 'constant')
-        mel.narrow(mel_hat.shape)
+        mel = mel.narrow(-1,0,mel_hat.shape[-1])
         loss = torch.nn.functional.l1_loss(mel, mel_hat)
 
         return loss
