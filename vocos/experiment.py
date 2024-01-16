@@ -127,7 +127,7 @@ class VocosExp(pl.LightningModule):
 
         # train generator
         if optimizer_idx == 1:
-            audio_hat = self(audio_input, **kwargs).narrow(audio_input.shape) #cut original audio, might remove
+            audio_hat = self(audio_input, **kwargs).narrow(-1,0,audio_input.shape[-1]) #cut original audio, might remove
             
             if self.train_discriminator:
                 _, gen_score_mp, fmap_rs_mp, fmap_gs_mp = self.multiperioddisc(
