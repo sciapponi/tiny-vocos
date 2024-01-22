@@ -79,7 +79,11 @@ class Snake(nn.Module):
         Applies the function to the input elementwise.
         Snake ∶= x + 1/a* sin^2 (xa)
         '''
-        return  x + (1.0/self.a) * pow(sin(x * self.a), 2)
+        print(x.shape)
+        print(self.a.shape)
+        a = torch.nn.functional.interpolate(self.a.view(1,1,-1), x.shape[-1], mode='linear').view(-1)
+        print(a.shape)
+        return  x + (1.0/a) * pow(sin(x * a), 2)
 
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
@@ -103,7 +107,7 @@ class SnakeXiConv(nn.Module):
         self.compression_conv = nn.Conv2d(c1, c2//compression, 1, 1,  groups=g, padding='same', bias=False)
         self.main_conv = nn.Conv2d(c2//compression if compression>1 else c1, c2, k, s,  groups=g, padding='same' if s==1 else autopad(k, p), bias=False)
         # self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        self.act = Snake(1)
+        self.act = Snake(1536)
         
         if attention:
             if attention_lite:
