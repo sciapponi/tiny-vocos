@@ -62,7 +62,10 @@ class Snake(nn.Module):
             `a` will be trained along with the rest of your model
         '''
         super(Snake,self).__init__()
+        
         self.in_features = in_features if isinstance(in_features, list) else [in_features]
+        if len(self.in_features) > 2:
+            raise NotImplementedError(f"Alpha Pool Size of Shape {len(self.in_features)} not supported. Input tensor must have 1 or 2 dimensions.")
 
         # Initialize `a`
         if a is not None:
@@ -79,10 +82,17 @@ class Snake(nn.Module):
         Applies the function to the input elementwise.
         Snake ∶= x + 1/a* sin^2 (xa)
         '''
-        print(x.shape)
-        print(self.a.shape)
-        a = torch.nn.functional.interpolate(self.a.view(1,1,-1), x.shape[-1], mode='linear').view(-1)
-        print(a.shape)
+        # print("before interpolation")
+        # print(f"A:{self.a.shape}")
+        # print(f"X:{x.shape}")
+        if self.a.dim() == 1:
+            a = torch.nn.functional.interpolate(self.a.view(1,1,-1), x.shape[-1], mode='linear').view(-1)
+        elif self.a.dim() == 2:
+            a = torch.nn.functional.interpolate(self.a.unsqueeze(0).unsqueeze(0), [x.shape[-3],x.shape[-1]], mode='bilinear').squeeze()
+            a = a.unsqueeze(1)
+        # print("After Interpolation:")
+        # print(f"A:{a.shape}")
+        # print(f"X:{x.shape}")
         return  x + (1.0/a) * pow(sin(x * a), 2)
 
 def autopad(k, p=None):  # kernel, padding
@@ -93,7 +103,28 @@ def autopad(k, p=None):  # kernel, padding
 
 class SnakeXiConv(nn.Module):
     # XiNET convolution with Snake Activation Function
-    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, act=True, compression=4, attention=True, skip_tensor_in=None, skip_channels=1, pool=None, pool_stride=None, upsampling=1, attention_k=3, attention_lite=True, norm='batchnorm', dropout_rate=0,  skip_k=1):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(self, 
+                 c1, 
+                 c2, 
+                 k=3, 
+                 s=1, 
+                 p=None, 
+                 g=1, 
+                 act=True, 
+                 compression=4, 
+                 attention=True, 
+                 skip_tensor_in=None, 
+                 skip_channels=1, 
+                 pool=None, 
+                 pool_stride=None, 
+                 upsampling=1, 
+                 attention_k=3, 
+                 attention_lite=True, 
+                 norm='batchnorm', 
+                 dropout_rate=0,  
+                 skip_k=1,
+                 snake_alpha_shape=1536):  # ch_in, ch_out, kernel, stride, padding, groups
+        
         super().__init__()
         self.compression = compression
         self.attention = attention
@@ -107,7 +138,7 @@ class SnakeXiConv(nn.Module):
         self.compression_conv = nn.Conv2d(c1, c2//compression, 1, 1,  groups=g, padding='same', bias=False)
         self.main_conv = nn.Conv2d(c2//compression if compression>1 else c1, c2, k, s,  groups=g, padding='same' if s==1 else autopad(k, p), bias=False)
         # self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        self.act = Snake(1536)
+        self.act = Snake(in_features = snake_alpha_shape)
         
         if attention:
             if attention_lite:

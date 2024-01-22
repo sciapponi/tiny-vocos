@@ -30,12 +30,12 @@ class Backbone(nn.Module):
 
 class SnakeXiVocosBackboneFixedChannels(Backbone):
 
-    def __init__(self, freqs, dim = 128, num_layers = 8):
+    def __init__(self, freqs, dim = 128, num_layers = 8, snake_alpha_shape=1536):
         super().__init__()
-        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(9,1), pool=1)
+        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(9,1), pool=1, skip_tensor_in=False, snake_alpha_shape=snake_alpha_shape)
         self.net = nn.ModuleList(
             [
-                SnakeXiConv(c1=dim, c2=dim, k=(9,1))
+                SnakeXiConv(c1=dim, c2=dim, k=(9,1), skip_tensor_in=False, snake_alpha_shape=snake_alpha_shape)
                 for _ in range(num_layers)
             ]
         )
@@ -54,7 +54,7 @@ class SnakeXiVocosBackboneFixedChannels(Backbone):
         # skip = self.last_layer(skip.transpose(1,2))
         skip = skip.squeeze(2).transpose(1,2)
         # print(skip.shape)
-        return skip  
+        return skip   
 
 class SnakeXiVocosBackbone(Backbone):
     def __init__(self, 
