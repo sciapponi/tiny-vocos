@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import rearrange
 
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
@@ -104,4 +105,47 @@ class XiConv(nn.Module):
             x = self.do(x)
 
         # print(f'Output shape {x.shape} \n')
+        return x
+
+class XiConvNext(nn.Module):
+
+    def __init__(self,
+                 dim:int,
+                 intermediate_dim:int=None
+    ):
+        super().__init__()
+
+        self.intermediate_dim = intermediate_dim
+        self.first = XiConv(c1=dim, c2=dim, compression = 5, k=(9,1), pool=1)
+
+
+        if self.intermediate_dim is None:
+            # self.second = XiConv(c1=dim, c2=dim, k=(9,1), pool=1)
+            self.second = nn.Linear(dim,dim)
+        else:
+            self.second = nn.ModuleList(
+                [
+                    # XiConv(c1=dim, c2=intermediate_dim, k=(9,1), pool=1),
+                    # # nn.SiLU(),
+                    # XiConv(c1=intermediate_dim, c2=dim, k=(9,1), pool=1)
+                    nn.Linear(dim,intermediate_dim), 
+                    nn.SiLU(),
+                    nn.Linear(intermediate_dim,dim)
+                ]
+            )
+
+
+    def forward(self, x):
+        x = self.first(x)
+        print(x.shape)
+        x = rearrange(x, "B F C T -> B T C F") # Rearrange to compute convolutions on channels
+        print(x.shape)
+        if self.intermediate_dim is None:
+            x = self.second(x)
+        else:
+            for module in self.second:
+                x = module(x)
+        x = rearrange(x, "B T C F -> B F C T") # Back to standard arrangement
+        # x = x.squeeze(2)#.transpose(1,2)
+        print(x.shape)
         return x

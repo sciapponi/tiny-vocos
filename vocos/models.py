@@ -7,7 +7,7 @@ from torch.nn.utils import weight_norm
 from vocos.modules import ConvNeXtBlock, ResBlock1, AdaLayerNorm
 
 # from micromind.networks.xinet import XiConv
-from xinet import XiConv
+from xinet import XiConv, XiConvNext
 from snake import SnakeXiConv
 from utils import Upsample
 from einops import rearrange
@@ -26,7 +26,6 @@ class Backbone(nn.Module):
                     and H denotes the model dimension.
         """
         raise NotImplementedError("Subclasses must implement the forward method.")
-
 
 class SnakeXiVocosBackboneFixedChannels(Backbone):
 
@@ -177,6 +176,28 @@ class XiVocosBackbone(Backbone):
         skip = skip.squeeze(2).transpose(1,2)
 
         return skip
+
+class XiConvNextBackbone(Backbone):
+    def __init__(self, freqs, dim = 128, intermediate_dim=None, num_layers = 8):
+        super().__init__()
+        self.first_layer = XiConv(c1=freqs, c2=dim, k=(9,1), pool=1)
+        self.net = nn.ModuleList(
+            [
+                XiConvNext(dim=dim, intermediate_dim=intermediate_dim)
+                for _ in range(num_layers)
+            ]
+        )
+
+    def forward(self, x):
+        x = x[:,:,None,:] # Add Channel Dimension
+        x = self.first_layer(x)
+
+        for conv in self.net:
+            x = conv(x)
+
+        x = x.squeeze(2) # Remove Channel dimension
+
+        return x
 
 class VocosBackbone(Backbone):
     """
