@@ -181,6 +181,9 @@ class XiConvNextBackbone(Backbone):
     def __init__(self, freqs, dim = 128, intermediate_dim=None, num_layers = 8):
         super().__init__()
         self.first_layer = XiConv(c1=freqs, c2=dim, k=(9,1), pool=1)
+
+        self.norm = nn.LayerNorm(dim, eps=1e-6)
+
         self.net = nn.ModuleList(
             [
                 XiConvNext(dim=dim, intermediate_dim=intermediate_dim)
@@ -188,15 +191,19 @@ class XiConvNextBackbone(Backbone):
             ]
         )
 
+        self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
+
     def forward(self, x):
         x = x[:,:,None,:] # Add Channel Dimension
         x = self.first_layer(x)
 
+        x = self.norm(rearrange(x, "B F C T -> B T C F"))
+        x = rearrange(x, "B T C F -> B F C T")
         for conv in self.net:
             x = conv(x)
 
-        x = x.squeeze(2).transpose(1,2) # Remove Channel dimension
-
+        x = x.squeeze(2) # Remove Channel dimension
+        x = self.final_layer_norm(x.transpose(1, 2))
         return x
 
 class VocosBackbone(Backbone):

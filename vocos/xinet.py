@@ -118,6 +118,7 @@ class XiConvNext(nn.Module):
         self.intermediate_dim = intermediate_dim
         self.first = XiConv(c1=dim, c2=dim, compression = 5, k=(9,1), pool=1)
 
+        self.norm = nn.LayerNorm(dim, eps=1e-6)
 
         if self.intermediate_dim is None:
             # self.second = XiConv(c1=dim, c2=dim, k=(9,1), pool=1)
@@ -136,9 +137,11 @@ class XiConvNext(nn.Module):
 
 
     def forward(self, x):
+        residual = x
         x = self.first(x)
-
         x = rearrange(x, "B F C T -> B T C F") # Rearrange to compute convolutions on channels
+        
+        x = self.norm(x)
 
         if self.intermediate_dim is None:
             x = self.second(x)
@@ -147,5 +150,5 @@ class XiConvNext(nn.Module):
                 x = module(x)
         x = rearrange(x, "B T C F -> B F C T") # Back to standard arrangement
         # x = x.squeeze(2)#.transpose(1,2)
-
+        x = residual + x
         return x
