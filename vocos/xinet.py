@@ -137,9 +137,9 @@ class XiConvNext(nn.Module):
 
     def forward(self, x):
         x = self.first(x)
-        print(x.shape)
+
         x = rearrange(x, "B F C T -> B T C F") # Rearrange to compute convolutions on channels
-        print(x.shape)
+
         if self.intermediate_dim is None:
             x = self.second(x)
         else:
@@ -147,5 +147,5 @@ class XiConvNext(nn.Module):
                 x = module(x)
         x = rearrange(x, "B T C F -> B F C T") # Back to standard arrangement
         # x = x.squeeze(2)#.transpose(1,2)
-        print(x.shape)
+
         return x
