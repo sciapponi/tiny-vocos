@@ -195,7 +195,7 @@ class XiConvNextBackbone(Backbone):
         for conv in self.net:
             x = conv(x)
 
-        x = x.squeeze(2) # Remove Channel dimension
+        x = x.squeeze(2).transpose(1,2) # Remove Channel dimension
 
         return x
 
