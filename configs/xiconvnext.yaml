@@ -45,7 +45,7 @@ model:
     backbone:
       class_path: vocos.models.XiConvNextBackbone
       init_args:
-        input_channels: 100
+        freqs: 100
         dim: 128
         intermediate_dim: 1536
         num_layers: 8
