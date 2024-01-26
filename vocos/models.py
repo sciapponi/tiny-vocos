@@ -31,10 +31,10 @@ class SnakeXiVocosBackboneFixedChannels(Backbone):
 
     def __init__(self, freqs, dim = 128, num_layers = 8, snake_alpha_shape=1536):
         super().__init__()
-        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(9,1), pool=1, skip_tensor_in=False, snake_alpha_shape=snake_alpha_shape)
+        self.first_layer = SnakeXiConv(c1=freqs, c2=dim, k=(1,9), pool=1, skip_tensor_in=False, snake_alpha_shape=snake_alpha_shape)
         self.net = nn.ModuleList(
             [
-                SnakeXiConv(c1=dim, c2=dim, k=(9,1), skip_tensor_in=False, snake_alpha_shape=snake_alpha_shape)
+                SnakeXiConv(c1=dim, c2=dim, k=(1,9), skip_tensor_in=False, snake_alpha_shape=snake_alpha_shape)
                 for _ in range(num_layers)
             ]
         )
@@ -105,10 +105,10 @@ class XiVocosBackboneFixedChannels(Backbone):
 
     def __init__(self, freqs, dim = 128, num_layers = 8):
         super().__init__()
-        self.first_layer = XiConv(c1=freqs, c2=dim, k=(9,1), pool=1)
+        self.first_layer = XiConv(c1=freqs, c2=dim, k=(1,9), pool=1)
         self.net = nn.ModuleList(
             [
-                XiConv(c1=dim, c2=dim, k=(9,1), pool=1)
+                XiConv(c1=dim, c2=dim, k=(1,9), pool=1)
                 for _ in range(num_layers)
             ]
         )
@@ -136,13 +136,13 @@ class XiVocosBackbone(Backbone):
                  dims = [64, 128, 256],
                  intermediate_dim=0):
         super().__init__()
-        self.first_layer = XiConv(c1=freqs, c2=dims[0], k=(9,1), pool=0)
+        self.first_layer = XiConv(c1=freqs, c2=dims[0], k=(1,9), pool=0)
 
         # Up Convolutions
         up = []
         last_size = dims[0]
         for i in dims[1:]:
-            up.append(XiConv(c1=last_size, c2=i, k=(9,1), pool=(1,2), pool_stride=(1,2)))
+            up.append(XiConv(c1=last_size, c2=i, k=(1,9), pool=(1,2), pool_stride=(1,2)))
             last_size = i
         self.up = nn.ModuleList(up)
 
@@ -151,7 +151,7 @@ class XiVocosBackbone(Backbone):
         dims = dims[::-1]
         last_size = dims[0]
         for i in dims[1:]:
-            down.append(XiConv(c1=last_size, c2=i, k=(9,1)))
+            down.append(XiConv(c1=last_size, c2=i, k=(1,9)))
             last_size = i
         self.down = nn.ModuleList(down)
     
@@ -180,7 +180,7 @@ class XiVocosBackbone(Backbone):
 class XiConvNextBackbone(Backbone):
     def __init__(self, freqs, dim = 128, intermediate_dim=None, num_layers = 8):
         super().__init__()
-        self.first_layer = XiConv(c1=freqs, c2=dim, k=(9,1), pool=1)
+        self.first_layer = XiConv(c1=freqs, c2=dim, k=(1,9), pool=1)
 
         self.norm = nn.LayerNorm(dim, eps=1e-6)
 
