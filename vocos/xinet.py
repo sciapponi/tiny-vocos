@@ -116,19 +116,19 @@ class XiConvNext(nn.Module):
         super().__init__()
 
         self.intermediate_dim = intermediate_dim
-        self.first = XiConv(c1=dim, c2=dim, compression = 5, k=(9,1), pool=1)
+        self.first = XiConv(c1=dim, c2=dim, compression = 5, k=(1,9), pool=1)
 
         self.norm = nn.LayerNorm(dim, eps=1e-6)
 
         if self.intermediate_dim is None:
-            # self.second = XiConv(c1=dim, c2=dim, k=(9,1), pool=1)
+            # self.second = XiConv(c1=dim, c2=dim, k=(1,9), pool=1)
             self.second = nn.Linear(dim,dim)
         else:
             self.second = nn.ModuleList(
                 [
-                    # XiConv(c1=dim, c2=intermediate_dim, k=(9,1), pool=1),
+                    # XiConv(c1=dim, c2=intermediate_dim, k=(1,9), pool=1),
                     # # nn.SiLU(),
-                    # XiConv(c1=intermediate_dim, c2=dim, k=(9,1), pool=1)
+                    # XiConv(c1=intermediate_dim, c2=dim, k=(1,9), pool=1)
                     nn.Linear(dim,intermediate_dim), 
                     nn.SiLU(),
                     nn.Linear(intermediate_dim,dim)
