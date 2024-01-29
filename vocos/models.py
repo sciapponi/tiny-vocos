@@ -112,6 +112,7 @@ class XiVocosBackboneFixedChannels(Backbone):
                 for _ in range(num_layers)
             ]
         )
+        self.norm = nn.LayerNorm(dim, eps=1e-6)
 
     def forward(self, input):
         x = input  # batch x freqs x time
@@ -120,15 +121,22 @@ class XiVocosBackboneFixedChannels(Backbone):
         x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
         # print(x.shape)
         x = self.first_layer(x)
-        skip = self.net[0](x)
 
-        for conv_block in self.net[1:]:
-            skip = conv_block(skip)
+        x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
+        x = self.norm(x)
+        x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
+        
+        for conv_block in self.net:
+            x = conv_block(x)
+            x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
+            x = self.norm(x)
+            x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
+
 
         # skip = self.last_layer(skip.transpose(1,2))
-        skip = skip.squeeze(2).transpose(1,2)
+        x = x.squeeze(2).transpose(1,2)
         # print(skip.shape)
-        return skip
+        return x
 
 class XiVocosBackbone(Backbone):
     def __init__(self, 
