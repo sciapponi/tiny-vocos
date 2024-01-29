@@ -28,7 +28,8 @@ class ConvNeXtBlock(nn.Module):
         super().__init__()
 
         self.linear = linear
-        self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
+        # put kenel to size 9 for comparison
+        self.dwconv = nn.Conv1d(dim, dim, kernel_size=9, padding=3, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
         if adanorm_num_embeddings:
             self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
