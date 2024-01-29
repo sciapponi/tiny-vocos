@@ -34,14 +34,15 @@ class ConvNeXtBlock(nn.Module):
             self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
         else:
             self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
-        self.act = nn.GELU()
-        self.pwconv2 = nn.Linear(intermediate_dim, dim)
-        self.gamma = (
-            nn.Parameter(layer_scale_init_value * torch.ones(dim), requires_grad=True)
-            if layer_scale_init_value > 0
-            else None
-        )
+        if self.linear:
+            self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
+            self.act = nn.GELU()
+            self.pwconv2 = nn.Linear(intermediate_dim, dim)
+            self.gamma = (
+                nn.Parameter(layer_scale_init_value * torch.ones(dim), requires_grad=True)
+                if layer_scale_init_value > 0
+                else None
+            )
 
     def forward(self, x: torch.Tensor, cond_embedding_id: Optional[torch.Tensor] = None) -> torch.Tensor:
         residual = x
