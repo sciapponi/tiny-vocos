@@ -228,6 +228,7 @@ class VocosBackbone(Backbone):
         num_layers: int,
         layer_scale_init_value: Optional[float] = None,
         adanorm_num_embeddings: Optional[int] = None,
+        linear: Optional[bool] = True
     ):
         super().__init__()
         self.input_channels = input_channels
@@ -245,6 +246,7 @@ class VocosBackbone(Backbone):
                     intermediate_dim=intermediate_dim,
                     layer_scale_init_value=layer_scale_init_value,
                     adanorm_num_embeddings=adanorm_num_embeddings,
+                    linear=linear
                 )
                 for _ in range(num_layers)
             ]

@@ -23,8 +23,11 @@ class ConvNeXtBlock(nn.Module):
         intermediate_dim: int,
         layer_scale_init_value: float,
         adanorm_num_embeddings: Optional[int] = None,
+        linear: Optional[bool] = True,
     ):
         super().__init__()
+
+        self.linear = linear
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
         if adanorm_num_embeddings:
@@ -49,11 +52,14 @@ class ConvNeXtBlock(nn.Module):
             x = self.norm(x, cond_embedding_id)
         else:
             x = self.norm(x)
-        x = self.pwconv1(x)
-        x = self.act(x)
-        x = self.pwconv2(x)
-        if self.gamma is not None:
-            x = self.gamma * x
+
+        if self.linear:
+            x = self.pwconv1(x)
+            x = self.act(x)
+            x = self.pwconv2(x)
+            if self.gamma is not None:
+                x = self.gamma * x
+        
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
         x = residual + x
         return x
