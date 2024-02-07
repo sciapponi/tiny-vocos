@@ -64,9 +64,13 @@ class ISTFTHead(FourierHead):
         # phase = torch.atan2(y, x)
         # S = mag * torch.exp(phase * 1j)
         # better directly produce the complex value 
+
         S = mag * (x + 1j * y)
+
         audio = self.istft(S)
+
         return audio
+        # return mag, x, y
 
 
 class IMDCTSymExpHead(FourierHead):

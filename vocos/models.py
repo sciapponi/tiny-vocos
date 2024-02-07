@@ -1,5 +1,5 @@
 from typing import Optional
-
+from micromind.networks import PhiNetConvBlock
 import torch
 from torch import nn
 from torch.nn.utils import weight_norm
@@ -11,6 +11,7 @@ from xinet import XiConv, XiConvNext
 from snake import SnakeXiConv
 from utils import Upsample
 from einops import rearrange
+from micromind import MicroMind
 
 class Backbone(nn.Module):
     """Base class for the generator's backbone. It preserves the same temporal resolution across all layers."""
@@ -121,16 +122,12 @@ class XiVocosBackboneFixedChannels(Backbone):
         x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
         # print(x.shape)
         x = self.first_layer(x)
-
-        x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
         x = self.norm(x)
-        x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
-        
         for conv_block in self.net:
             x = conv_block(x)
-            x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
+            x = rearrange(x, "batch freqs channels time -> batch channels freqs time")
             x = self.norm(x)
-            x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
+            x = rearrange(x, "batch channels freqs time -> batch freqs channels time")
 
 
         # skip = self.last_layer(skip.transpose(1,2))
@@ -212,6 +209,42 @@ class XiConvNextBackbone(Backbone):
 
         x = x.squeeze(2) # Remove Channel dimension
         x = self.final_layer_norm(x.transpose(1, 2))
+        return x
+
+class PhiBackbone(Backbone):
+    def __init__(self, freqs, dim = 128, num_layers = 8):
+        super().__init__()
+        self.first_layer = PhiNetConvBlock(in_shape=[freqs], filters=dim, k_size=(1,9), expansion=1, stride=1, has_se=True)
+        self.net = nn.ModuleList(
+            [
+                PhiNetConvBlock(in_shape=[dim], filters=dim, k_size=(1,9), expansion=1, stride=1, has_se=True)
+                for _ in range(num_layers)
+            ]
+        )
+        self.norm = nn.LayerNorm(dim, eps=1e-6)
+
+    def forward(self, input):
+        x = input  # batch x freqs x time
+        # x = torch.stack([x for _ in range(3)], dim=1) # create fake channels
+        x = x[:,None,:,:] # Add 1 channel to make 2d convs work
+        x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
+        # print(x.shape)
+        x = self.first_layer(x)
+
+        x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
+        x = self.norm(x)
+        x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
+        
+        for conv_block in self.net:
+            x = conv_block(x)
+            x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
+            x = self.norm(x)
+            x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
+
+
+        # skip = self.last_layer(skip.transpose(1,2))
+        x = x.squeeze(2).transpose(1,2)
+        # print(skip.shape)
         return x
 
 class VocosBackbone(Backbone):

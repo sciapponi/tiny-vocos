@@ -28,8 +28,9 @@ class ConvNeXtBlock(nn.Module):
         super().__init__()
 
         self.linear = linear
-        # put kenel to size 9 for comparison
-        self.dwconv = nn.Conv1d(dim, dim, kernel_size=9, padding=3, groups=dim)  # depthwise conv
+        # put kenel to size 9 for comparison (original = 7)
+        kernel_size = 9
+        self.dwconv = nn.Conv1d(dim, dim, kernel_size=kernel_size, padding=kernel_size//2, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
         if adanorm_num_embeddings:
             self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
@@ -37,7 +38,7 @@ class ConvNeXtBlock(nn.Module):
             self.norm = nn.LayerNorm(dim, eps=1e-6)
         if self.linear:
             self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
-            self.act = nn.GELU()
+            self.act = nn.SiLU() #nn.GELU() 
             self.pwconv2 = nn.Linear(intermediate_dim, dim)
             self.gamma = (
                 nn.Parameter(layer_scale_init_value * torch.ones(dim), requires_grad=True)
@@ -47,7 +48,9 @@ class ConvNeXtBlock(nn.Module):
 
     def forward(self, x: torch.Tensor, cond_embedding_id: Optional[torch.Tensor] = None) -> torch.Tensor:
         residual = x
+        print(x.shape)
         x = self.dwconv(x)
+        print(x.shape)
         x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
         if self.adanorm:
             assert cond_embedding_id is not None
@@ -61,7 +64,7 @@ class ConvNeXtBlock(nn.Module):
             x = self.pwconv2(x)
             if self.gamma is not None:
                 x = self.gamma * x
-        
+        print(x.shape)
         x = x.transpose(1, 2)  # (B, T, C) -> (B, C, T)
         x = residual + x
         return x
