@@ -39,7 +39,7 @@ class ConvNeXtBlock(nn.Module):
         if self.linear:
             self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
             self.act = nn.SiLU() #nn.GELU() 
-            self.pwconv2 = nn.Linear(intermediate_dim, dim)
+            # self.pwconv2 = nn.Linear(intermediate_dim, dim)
             self.gamma = (
                 nn.Parameter(layer_scale_init_value * torch.ones(dim), requires_grad=True)
                 if layer_scale_init_value > 0
@@ -61,7 +61,7 @@ class ConvNeXtBlock(nn.Module):
         if self.linear:
             x = self.pwconv1(x)
             x = self.act(x)
-            x = self.pwconv2(x)
+            # x = self.pwconv2(x)
             if self.gamma is not None:
                 x = self.gamma * x
         # print(x.shape)
