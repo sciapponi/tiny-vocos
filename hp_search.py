@@ -57,7 +57,9 @@ def objective(trial:optuna.trial.Trial):
                      n_fft=n_fft,
                      hop_length=hop_length)
     
-    if get_size_MB(nn.Sequential(backbone,head)) > 1.6:
+    size = get_size_MB(nn.Sequential(backbone,head))
+    if size > 1.6:
+        print("MODEL WEIGHTS ? 1.6 :", size)
         return 0
     
     #Feature Extractor
@@ -87,7 +89,7 @@ def objective(trial:optuna.trial.Trial):
     datamodule =  VocosDataModule(train_params=trainDataConfig, val_params=valDataConfig) 
     
     #LOGGER
-    logger = CSVLogger("hp_logs", name=f"{backbone_type}_{hidden_dim}_{n_fft}_{num_layers}_{lr}.csv")
+    logger = CSVLogger("hp_logs", name=f"{backbone_type}_{hidden_dim}_{n_fft}_{num_layers}_{lr}")
     # TRAINER
     trainer = pl.Trainer(
                         logger=logger,
