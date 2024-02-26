@@ -29,6 +29,7 @@ def objective(trial:optuna.trial.Trial):
     
     # FIXED PARAMETERS:
     hop_length = 256
+    sample_rate=24000
     # SELECTION:
     # Backbone Type
     backbone_type = trial.suggest_categorical(name="backone_type", choices=["vocos", "xinet", "phinet"])
@@ -67,6 +68,7 @@ def objective(trial:optuna.trial.Trial):
     model = VocosExp(feature_extractor=feature_extractor,
                      backbone=backbone,
                      head=head,
+                     sample_rate=sample_rate,
                      initial_learning_rate=lr,
                      evaluate_pesq=True
                      )
