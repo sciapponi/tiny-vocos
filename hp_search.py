@@ -97,7 +97,7 @@ def objective(trial:optuna.trial.Trial):
                         enable_checkpointing=False,
                         max_epochs=EPOCHS,
                         accelerator="auto",
-                        devices=4,
+                        devices=1,
                         callbacks=[PyTorchLightningPruningCallback(trial, monitor="pesq_score")],
                         )
     
