@@ -107,7 +107,7 @@ if __name__== "__main__":
     pruner = optuna.pruners.MedianPruner() #if args.pruning else optuna.pruners.NopPruner()
 
     study = optuna.create_study(direction="maximize", pruner=pruner)
-    study.optimize(objective, n_trials=192, timeout=600)
+    study.optimize(objective, n_trials=192)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
