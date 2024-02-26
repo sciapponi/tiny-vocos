@@ -4,10 +4,10 @@ from vocos.models import VocosBackbone, XiVocosBackboneFixedChannels, PhiBackbon
 from vocos.heads import ISTFTHead
 from vocos.feature_extractors import MelSpectrogramFeatures
 from torch import nn
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
-from pytorch_lightning.loggers import CSVLogger
+from lightning.pytorch.loggers import CSVLogger
 
 EPOCHS = 5
 BATCHSIZE = 16
