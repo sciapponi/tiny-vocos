@@ -122,14 +122,14 @@ class XiVocosBackboneFixedChannels(Backbone):
         x = rearrange(x, "batch channels freqs time -> batch freqs channels time") # rearrange use frequencies as channels
         # print(x.shape)
         x = self.first_layer(x)
-        x = rearrange(x, "batch freqs channels time -> batch channels freqs time")
+        x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
         x = self.norm(x)
-        x = rearrange(x, "batch channels freqs time -> batch freqs channels time")
+        x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
         for conv_block in self.net:
             x = conv_block(x)
-            x = rearrange(x, "batch freqs channels time -> batch channels freqs time")
+            x = rearrange(x, "batch freqs channels time -> batch time channels freqs")
             x = self.norm(x)
-            x = rearrange(x, "batch channels freqs time -> batch freqs channels time")
+            x = rearrange(x, "batch time channels freqs -> batch freqs channels time")
 
 
         # skip = self.last_layer(skip.transpose(1,2))
