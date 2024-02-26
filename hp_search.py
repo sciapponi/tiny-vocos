@@ -25,7 +25,7 @@ def get_size_MB(model):
     return size_all_mb
 
 
-def objective(self, trial:optuna.trial.Trial):
+def objective(trial:optuna.trial.Trial):
     
     # FIXED PARAMETERS:
     hop_length = 256
