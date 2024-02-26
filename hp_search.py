@@ -87,7 +87,7 @@ def objective(trial:optuna.trial.Trial):
     datamodule =  VocosDataModule(train_params=trainDataConfig, val_params=valDataConfig) 
     
     #LOGGER
-    logger = CSVLogger("hp_logs", name=f"{backbone_type}_{hidden_dim}_{n_fft}_{num_layers}_{lr}")
+    logger = CSVLogger("hp_logs", name=f"{backbone_type}_{hidden_dim}_{n_fft}_{num_layers}_{lr}.csv")
     # TRAINER
     trainer = pl.Trainer(
                         logger=logger,
