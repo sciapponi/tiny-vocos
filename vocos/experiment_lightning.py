@@ -281,12 +281,12 @@ class VocosExp(pl.LightningModule):
         outputs = self.validation_step_outputs
         if self.global_rank == 0:
             *_, audio_in, audio_pred = outputs[0].values()
-            self.logger.experiment.add_audio(
-                "val_in", audio_in.data.cpu().numpy(), self.global_step, self.hparams.sample_rate
-            )
-            self.logger.experiment.add_audio(
-                "val_pred", audio_pred.data.cpu().numpy(), self.global_step, self.hparams.sample_rate
-            )
+            # self.logger.experiment.add_audio(
+            #     "val_in", audio_in.data.cpu().numpy(), self.global_step, self.hparams.sample_rate
+            # )
+            # self.logger.experiment.add_audio(
+            #     "val_pred", audio_pred.data.cpu().numpy(), self.global_step, self.hparams.sample_rate
+            # )
             mel_target = safe_log(self.melspec_loss.mel_spec(audio_in))
             mel_hat = safe_log(self.melspec_loss.mel_spec(audio_pred))
             self.logger.experiment.add_image(
