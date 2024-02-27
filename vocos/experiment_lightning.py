@@ -205,7 +205,6 @@ class VocosExp(pl.LightningModule):
         self.toggle_optimizer(optimizer_g)
         audio_hat = self(audio_input, **kwargs).narrow(-1,0,audio_input.shape[-1]) #cut original audio, might remove
         g_loss = self.generator_step(audio_input, audio_hat)
-        print(g_loss)
         self.manual_backward(g_loss)
         optimizer_g.step()
         optimizer_g.zero_grad()
