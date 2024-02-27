@@ -3,7 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 import torchaudio
-from pytorch_lightning import LightningDataModule
+# from pytorch_lightning import LightningDataModule
+from lightning.pytorch import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
 
 torch.set_num_threads(1)
