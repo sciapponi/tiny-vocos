@@ -251,6 +251,18 @@ class VocosExp(pl.LightningModule):
         mel_loss = self.melspec_loss(audio_hat.unsqueeze(1), audio_input.unsqueeze(1))
         total_loss = mel_loss + (5 - utmos_score) + (5 - pesq_score)
 
+        self.outputs.append({
+            "val_loss": total_loss,
+            "mel_loss": mel_loss,
+            "utmos_score": utmos_score,
+            "pesq_score": pesq_score,
+            "periodicity_loss": periodicity_loss,
+            "pitch_loss": pitch_loss,
+            "f1_score": f1_score,
+            "audio_input": audio_input[0],
+            "audio_pred": audio_hat[0],
+        })
+
         return {
             "val_loss": total_loss,
             "mel_loss": mel_loss,
@@ -263,7 +275,8 @@ class VocosExp(pl.LightningModule):
             "audio_pred": audio_hat[0],
         }
 
-    def on_validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
+        outputs = self.outputs
         if self.global_rank == 0:
             *_, audio_in, audio_pred = outputs[0].values()
             self.logger.experiment.add_audio(
