@@ -263,7 +263,7 @@ class VocosExp(pl.LightningModule):
             "audio_pred": audio_hat[0],
         }
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self, outputs):
         if self.global_rank == 0:
             *_, audio_in, audio_pred = outputs[0].values()
             self.logger.experiment.add_audio(
