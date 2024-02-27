@@ -124,26 +124,24 @@ class VocosExp(pl.LightningModule):
         return loss
     
     def generator_step(self,audio_input, audio_hat, **kwargs):
-        if self.train_discriminator:
-                _, gen_score_mp, fmap_rs_mp, fmap_gs_mp = self.multiperioddisc(
-                    y=audio_input, y_hat=audio_hat, **kwargs,
-                )
-                _, gen_score_mrd, fmap_rs_mrd, fmap_gs_mrd = self.multiresddisc(
-                    y=audio_input, y_hat=audio_hat, **kwargs,
-                )
-                loss_gen_mp, list_loss_gen_mp = self.gen_loss(disc_outputs=gen_score_mp)
-                loss_gen_mrd, list_loss_gen_mrd = self.gen_loss(disc_outputs=gen_score_mrd)
-                loss_gen_mp = loss_gen_mp / len(list_loss_gen_mp)
-                loss_gen_mrd = loss_gen_mrd / len(list_loss_gen_mrd)
-                loss_fm_mp = self.feat_matching_loss(fmap_r=fmap_rs_mp, fmap_g=fmap_gs_mp) / len(fmap_rs_mp)
-                loss_fm_mrd = self.feat_matching_loss(fmap_r=fmap_rs_mrd, fmap_g=fmap_gs_mrd) / len(fmap_rs_mrd)
 
-                self.log("generator/multi_period_loss", loss_gen_mp)
-                self.log("generator/multi_res_loss", loss_gen_mrd)
-                self.log("generator/feature_matching_mp", loss_fm_mp)
-                self.log("generator/feature_matching_mrd", loss_fm_mrd)
-        else:
-            loss_gen_mp = loss_gen_mrd = loss_fm_mp = loss_fm_mrd = 0
+            _, gen_score_mp, fmap_rs_mp, fmap_gs_mp = self.multiperioddisc(
+                y=audio_input, y_hat=audio_hat, **kwargs,
+            )
+            _, gen_score_mrd, fmap_rs_mrd, fmap_gs_mrd = self.multiresddisc(
+                y=audio_input, y_hat=audio_hat, **kwargs,
+            )
+            loss_gen_mp, list_loss_gen_mp = self.gen_loss(disc_outputs=gen_score_mp)
+            loss_gen_mrd, list_loss_gen_mrd = self.gen_loss(disc_outputs=gen_score_mrd)
+            loss_gen_mp = loss_gen_mp / len(list_loss_gen_mp)
+            loss_gen_mrd = loss_gen_mrd / len(list_loss_gen_mrd)
+            loss_fm_mp = self.feat_matching_loss(fmap_r=fmap_rs_mp, fmap_g=fmap_gs_mp) / len(fmap_rs_mp)
+            loss_fm_mrd = self.feat_matching_loss(fmap_r=fmap_rs_mrd, fmap_g=fmap_gs_mrd) / len(fmap_rs_mrd)
+            self.log("generator/multi_period_loss", loss_gen_mp)
+            self.log("generator/multi_res_loss", loss_gen_mrd)
+            self.log("generator/feature_matching_mp", loss_fm_mp)
+            self.log("generator/feature_matching_mrd", loss_fm_mrd)
+
 
             mel_loss = self.melspec_loss(audio_hat, audio_input)
             loss = (
