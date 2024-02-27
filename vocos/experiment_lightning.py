@@ -103,7 +103,7 @@ class VocosExp(pl.LightningModule):
         audio_output = self.head(x)
         return audio_output
 
-    def discriminator_step(self, audio_input, audio_hat):
+    def discriminator_step(self, audio_input, audio_hat, **kwargs):
         
 
         real_score_mp, gen_score_mp, _, _ = self.multiperioddisc(y=audio_input, y_hat=audio_hat, **kwargs,)
