@@ -66,6 +66,7 @@ class VocosExp(pl.LightningModule):
         self.base_mel_coeff = self.mel_loss_coeff = mel_loss_coeff
 
         self.automatic_optimization =  False 
+        self.validation_step_outputs = []
         
     def configure_optimizers(self):
         disc_params = [
@@ -251,7 +252,8 @@ class VocosExp(pl.LightningModule):
         mel_loss = self.melspec_loss(audio_hat.unsqueeze(1), audio_input.unsqueeze(1))
         total_loss = mel_loss + (5 - utmos_score) + (5 - pesq_score)
 
-        self.outputs.append({
+        
+        self.validation_step_outputs.append({
             "val_loss": total_loss,
             "mel_loss": mel_loss,
             "utmos_score": utmos_score,
@@ -276,7 +278,7 @@ class VocosExp(pl.LightningModule):
         }
 
     def on_validation_epoch_end(self):
-        outputs = self.outputs
+        outputs = self.validation_step_outputs
         if self.global_rank == 0:
             *_, audio_in, audio_pred = outputs[0].values()
             self.logger.experiment.add_audio(
