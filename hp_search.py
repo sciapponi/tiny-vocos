@@ -98,13 +98,13 @@ def objective(trial:optuna.trial.Trial):
                         max_epochs=EPOCHS,
                         accelerator="auto",
                         devices=[4],
-                        callbacks=[PyTorchLightningPruningCallback(trial, monitor="pesq_score")],
+                        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val/pesq_score")],
                         )
     
     
     
     trainer.fit(model, datamodule=datamodule)
-    return trainer.callback_metrics["pesq_score"].item()
+    return trainer.callback_metrics["val/pesq_score"].item()
 
 
 if __name__== "__main__":
