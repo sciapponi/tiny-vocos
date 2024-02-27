@@ -195,9 +195,9 @@ class VocosExp(pl.LightningModule):
         with torch.no_grad():
             audio_hat = self(audio_input, **kwargs)
         
-        print(audio_hat)
+        
         d_loss = self.discriminator_step(audio_input, audio_hat)
-
+        print(d_loss)
         self.manual_backward(d_loss)
         optimizer_d.step()
         optimizer_d.zero_grad()
