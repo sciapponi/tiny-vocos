@@ -1,4 +1,4 @@
-from vocos.experiment import VocosExp
+from vocos.experiment_lightning import VocosExp
 from vocos.dataset import VocosDataModule, DataConfig
 from vocos.models import VocosBackbone, XiVocosBackboneFixedChannels, PhiBackbone
 from vocos.heads import ISTFTHead

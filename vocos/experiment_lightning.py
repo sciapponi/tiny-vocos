@@ -1,11 +1,9 @@
 import math
-
 import numpy as np
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 import torchaudio
 import transformers
-
 from vocos.discriminators import MultiPeriodDiscriminator, MultiResolutionDiscriminator
 from vocos.feature_extractors import FeatureExtractor
 from vocos.heads import FourierHead
@@ -67,6 +65,8 @@ class VocosExp(pl.LightningModule):
         self.train_discriminator = False
         self.base_mel_coeff = self.mel_loss_coeff = mel_loss_coeff
 
+        self.automatic_optimization =  False 
+        
     def configure_optimizers(self):
         disc_params = [
             {"params": self.multiperioddisc.parameters()},
@@ -81,18 +81,20 @@ class VocosExp(pl.LightningModule):
         opt_disc = torch.optim.AdamW(disc_params, lr=self.hparams.initial_learning_rate, betas=(0.8, 0.9))
         opt_gen = torch.optim.AdamW(gen_params, lr=self.hparams.initial_learning_rate, betas=(0.8, 0.9))
 
-        max_steps = self.trainer.max_steps // 2  # Max steps per optimizer
-        scheduler_disc = transformers.get_cosine_schedule_with_warmup(
-            opt_disc, num_warmup_steps=self.hparams.num_warmup_steps, num_training_steps=max_steps,
-        )
-        scheduler_gen = transformers.get_cosine_schedule_with_warmup(
-            opt_gen, num_warmup_steps=self.hparams.num_warmup_steps, num_training_steps=max_steps,
-        )
+        # max_steps = self.trainer.max_steps // 2  # Max steps per optimizer
+        # scheduler_disc = transformers.get_cosine_schedule_with_warmup(
+        #     opt_disc, num_warmup_steps=self.hparams.num_warmup_steps, num_training_steps=max_steps,
+        # )
+        # scheduler_gen = transformers.get_cosine_schedule_with_warmup(
+        #     opt_gen, num_warmup_steps=self.hparams.num_warmup_steps, num_training_steps=max_steps,
+        # )
 
-        return (
-            [opt_disc, opt_gen],
-            [{"scheduler": scheduler_disc, "interval": "step"}, {"scheduler": scheduler_gen, "interval": "step"}],
-        )
+        # return (
+        #     [opt_disc, opt_gen],
+        #     [{"scheduler": scheduler_disc, "interval": "step"}, {"scheduler": scheduler_gen, "interval": "step"}],
+        # )
+
+        return opt_disc, opt_gen
 
     def forward(self, audio_input, **kwargs):
         features = self.feature_extractor(audio_input, **kwargs)
@@ -100,36 +102,28 @@ class VocosExp(pl.LightningModule):
         audio_output = self.head(x)
         return audio_output
 
-    def training_step(self, batch, batch_idx, optimizer_idx, **kwargs):
-        audio_input = batch
+    def discriminator_step(self, audio_input, audio_hat):
+        
 
-        # train discriminator
-        if optimizer_idx == 0 and self.train_discriminator:
-            with torch.no_grad():
-                audio_hat = self(audio_input, **kwargs)
+        real_score_mp, gen_score_mp, _, _ = self.multiperioddisc(y=audio_input, y_hat=audio_hat, **kwargs,)
+        real_score_mrd, gen_score_mrd, _, _ = self.multiresddisc(y=audio_input, y_hat=audio_hat, **kwargs,)
+        loss_mp, loss_mp_real, _ = self.disc_loss(
+            disc_real_outputs=real_score_mp, disc_generated_outputs=gen_score_mp
+        )
+        loss_mrd, loss_mrd_real, _ = self.disc_loss(
+            disc_real_outputs=real_score_mrd, disc_generated_outputs=gen_score_mrd
+        )
+        loss_mp /= len(loss_mp_real)
+        loss_mrd /= len(loss_mrd_real)
+        loss = loss_mp + self.hparams.mrd_loss_coeff * loss_mrd
+        self.log("discriminator/total", loss, prog_bar=True)
+        self.log("discriminator/multi_period_loss", loss_mp)
+        self.log("discriminator/multi_res_loss", loss_mrd)
 
-            real_score_mp, gen_score_mp, _, _ = self.multiperioddisc(y=audio_input, y_hat=audio_hat, **kwargs,)
-            real_score_mrd, gen_score_mrd, _, _ = self.multiresddisc(y=audio_input, y_hat=audio_hat, **kwargs,)
-            loss_mp, loss_mp_real, _ = self.disc_loss(
-                disc_real_outputs=real_score_mp, disc_generated_outputs=gen_score_mp
-            )
-            loss_mrd, loss_mrd_real, _ = self.disc_loss(
-                disc_real_outputs=real_score_mrd, disc_generated_outputs=gen_score_mrd
-            )
-            loss_mp /= len(loss_mp_real)
-            loss_mrd /= len(loss_mrd_real)
-            loss = loss_mp + self.hparams.mrd_loss_coeff * loss_mrd
-
-            self.log("discriminator/total", loss, prog_bar=True)
-            self.log("discriminator/multi_period_loss", loss_mp)
-            self.log("discriminator/multi_res_loss", loss_mrd)
-            return loss
-
-        # train generator
-        if optimizer_idx == 1:
-            audio_hat = self(audio_input, **kwargs).narrow(-1,0,audio_input.shape[-1]) #cut original audio, might remove
-            
-            if self.train_discriminator:
+        return loss
+    
+    def generator_step(self,audio_input, audio_hat, **kwargs):
+        if self.train_discriminator:
                 _, gen_score_mp, fmap_rs_mp, fmap_gs_mp = self.multiperioddisc(
                     y=audio_input, y_hat=audio_hat, **kwargs,
                 )
@@ -147,8 +141,8 @@ class VocosExp(pl.LightningModule):
                 self.log("generator/multi_res_loss", loss_gen_mrd)
                 self.log("generator/feature_matching_mp", loss_fm_mp)
                 self.log("generator/feature_matching_mrd", loss_fm_mrd)
-            else:
-                loss_gen_mp = loss_gen_mrd = loss_fm_mp = loss_fm_mrd = 0
+        else:
+            loss_gen_mp = loss_gen_mrd = loss_fm_mp = loss_fm_mrd = 0
 
             mel_loss = self.melspec_loss(audio_hat, audio_input)
             loss = (
@@ -187,6 +181,35 @@ class VocosExp(pl.LightningModule):
                 )
 
             return loss
+
+    def training_step(self, batch, **kwargs):
+        audio_input = batch
+
+        # OPTIMIZERS
+        optimizer_g, optimizer_d = self.optimizers()
+
+        
+        # Train discriminator
+        self.toggle_optimizer(optimizer_d)
+        with torch.no_grad():
+                audio_hat = self(audio_input, **kwargs)
+        d_loss = self.discriminator_step(audio_input, audio_hat)
+
+        self.manual_backward(d_loss)
+        optimizer_d.step()
+        optimizer_d.zero_grad()
+        self.untoggle_optimizer(optimizer_d)
+
+
+        #Train Generator
+        self.toggle_optimizer(optimizer_g)
+        audio_hat = self(audio_input, **kwargs).narrow(-1,0,audio_input.shape[-1]) #cut original audio, might remove
+        g_loss = self.generator_step(audio_input, audio_hat)
+        self.manual_backward(g_loss)
+        optimizer_g.step()
+        optimizer_g.zero_grad()
+        self.untoggle_optimizer(optimizer_g)
+            
 
     def on_validation_epoch_start(self):
         if self.hparams.evaluate_utmos:
