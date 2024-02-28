@@ -72,7 +72,8 @@ def objective(trial:optuna.trial.Trial):
                      head=head,
                      sample_rate=sample_rate,
                      initial_learning_rate=lr,
-                     evaluate_pesq=True
+                     evaluate_pesq=False, 
+                     evaluate_utmos=True
                      )
     
     # DATA
@@ -89,7 +90,7 @@ def objective(trial:optuna.trial.Trial):
     datamodule =  VocosDataModule(train_params=trainDataConfig, val_params=valDataConfig) 
     
     #LOGGER
-    logger = CSVLogger("hp_logs", name=f"{backbone_type}_{hidden_dim}_{n_fft}_{num_layers}_{lr}")
+    logger = CSVLogger("hp_logs_utmos", name=f"{backbone_type}_{hidden_dim}_{n_fft}_{num_layers}_{lr}")
     # TRAINER
     trainer = pl.Trainer(
                         logger=logger,
@@ -98,13 +99,13 @@ def objective(trial:optuna.trial.Trial):
                         max_epochs=EPOCHS,
                         accelerator="auto",
                         devices=[4],
-                        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val/pesq_score")],
+                        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val/utmos_score")],
                         )
     
     
     
     trainer.fit(model, datamodule=datamodule)
-    return trainer.callback_metrics["val/pesq_score"].item()
+    return trainer.callback_metrics["val/utmos_score"].item()
 
 
 if __name__== "__main__":
