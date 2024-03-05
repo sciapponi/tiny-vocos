@@ -46,7 +46,7 @@ class VocosExp(pl.LightningModule):
             pretrain_mel_steps (int, optional): Number of steps to pre-train the model without the GAN objective. Default is 0.
             decay_mel_coeff (bool, optional): If True, the Mel-spectrogram loss coefficient is decayed during training. Default is False.
             evaluate_utmos (bool, optional): If True, UTMOS scores are computed for each validation run.
-            evaluate_pesq (bool, optional): If True, PESQ scores arelog computed for each validation run.
+            evaluate_pesq (bool, optional): If True, PESQ scores are computed for each validation run.
             evaluate_periodicty (bool, optional): If True, periodicity scores are computed for each validation run.
         """
         super().__init__()
@@ -127,8 +127,7 @@ class VocosExp(pl.LightningModule):
 
         # train generator
         if optimizer_idx == 1:
-            audio_hat = self(audio_input, **kwargs).narrow(-1,0,audio_input.shape[-1]) #cut original audio, might remove
-            
+            audio_hat = self(audio_input, **kwargs)
             if self.train_discriminator:
                 _, gen_score_mp, fmap_rs_mp, fmap_gs_mp = self.multiperioddisc(
                     y=audio_input, y_hat=audio_hat, **kwargs,
