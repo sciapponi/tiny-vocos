@@ -61,7 +61,7 @@ class ConvNeXtBlock(nn.Module):
         if self.linear:
             x = self.pwconv1(x)
             x = self.act(x)
-            # x = self.pwconv2(x)
+            x = self.pwconv2(x)
             if self.gamma is not None:
                 x = self.gamma * x
         # print(x.shape)
