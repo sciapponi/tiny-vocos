@@ -198,6 +198,8 @@ class VocosExp(pl.LightningModule):
         audio_input = batch
         audio_hat = self(audio_input, **kwargs)
 
+        print(audio_hat.shape)
+        print(audio_hat)
         audio_16_khz = torchaudio.functional.resample(audio_input, orig_freq=self.hparams.sample_rate, new_freq=16000)
         audio_hat_16khz = torchaudio.functional.resample(audio_hat, orig_freq=self.hparams.sample_rate, new_freq=16000)
 
