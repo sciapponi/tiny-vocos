@@ -196,10 +196,10 @@ class VocosExp(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx, **kwargs):
         audio_input = batch
-        audio_hat = self(audio_input, **kwargs)
+        audio_hat = self(audio_input, **kwargs)[0]
 
 
-        print(audio_hat)
+        # print(audio_hat)
         audio_16_khz = torchaudio.functional.resample(audio_input, orig_freq=self.hparams.sample_rate, new_freq=16000)
         audio_hat_16khz = torchaudio.functional.resample(audio_hat, orig_freq=self.hparams.sample_rate, new_freq=16000)
 
