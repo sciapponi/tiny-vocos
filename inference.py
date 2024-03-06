@@ -15,9 +15,9 @@ wavs = ["/workspace/datasets/speech/LJSpeech-1.1/wavs/LJ006-0018.wav",
         "/workspace/datasets/speech/LJSpeech-1.1/wavs/LJ048-0063.wav",
         "/workspace/datasets/speech/LJSpeech-1.1/wavs/LJ050-0113.wav"]
 
-model_configs = ["/raid/home/e3da/projects/sciapponi/tiny-vocos/logs/lj_phinet_128_nfft512/lightning_logs/version_0/config.yaml",
-                    "/raid/home/e3da/projects/sciapponi/tiny-vocos/logs/xivocos_1.5mb/lightning_logs/version_5/config.yaml",
-                    "/raid/home/e3da/projects/sciapponi/tiny-vocos/logs/lj_tfvocos_128_128_bn/lightning_logs/version_2/config.yaml"]
+model_configs = ["/workspace/projects/sciapponi/tiny-vocos/logs/lj_phinet_128_nfft512/lightning_logs/version_0/config.yaml",
+                    "/workspace/projects/sciapponi/tiny-vocos/logs/xivocos_1.5mb/lightning_logs/version_5/config.yaml",
+                    "/workspace/projects/sciapponi/tiny-vocos/logs/lj_tfvocos_128_128_bn/lightning_logs/version_2/config.yaml"]
 
 # model = Vocos.from_hparams("/raid/home/e3da/projects/sciapponi/tiny-vocos/logs/lj_phinet_128_nfft512/lightning_logs/version_0/config.yaml")
 
