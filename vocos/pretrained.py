@@ -55,9 +55,9 @@ class Vocos(nn.Module):
             config = yaml.safe_load(f)
         
         print(config)
-        # feature_extractor = instantiate_class(args=(), init=config["feature_extractor"])
-        backbone = instantiate_class(args=(), init=config["backbone"])
-        head = instantiate_class(args=(), init=config["head"])
+        feature_extractor = instantiate_class(args=(), init=config["init_args"]["feature_extractor"])
+        backbone = instantiate_class(args=(), init=config["init_args"]["backbone"])
+        head = instantiate_class(args=(), init=config["init_args"]["head"])
         model = cls(feature_extractor=feature_extractor, backbone=backbone, head=head)
         return model
 
