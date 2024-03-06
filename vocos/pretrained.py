@@ -114,7 +114,7 @@ class Vocos(nn.Module):
         x = self.backbone(features_input, **kwargs)
         print(x.shape)
         audio_output = self.head(x)
-        print(audio_output.shape)
+        print(audio_output)
         return audio_output
 
     @torch.inference_mode()
