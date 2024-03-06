@@ -37,4 +37,4 @@ for idx, conf in enumerate(model_configs):
         vocos_output = model.decode(spec)
         # Upsample to 44100 Hz for better reproduction on audio hardware
         vocos_output = torchaudio.functional.resample(vocos_output, orig_freq=24000, new_freq=44100).cpu()
-        torchaudio.save(f"{idx}_{i}.mp3", vocos_output, 44100, compression=128)
+        torchaudio.save(f"audio/{idx}_{i}.mp3", vocos_output, 44100, compression=128)
