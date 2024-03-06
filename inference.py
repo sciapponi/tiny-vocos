@@ -29,7 +29,7 @@ num_samples = 48384
 for idx, conf in enumerate(model_configs):
     model = Vocos.from_hparams(f"{conf}/config.yaml")
     checkpoint = torch.load(f"{conf}/checkpoints/last.ckpt")
-    model.load_state_dict(checkpoint['model_state_dict'])
+    model.load_state_dict(checkpoint)
     for i, wav in enumerate(wavs):
         y, sr = torchaudio.load(wav)
         y = torchaudio.functional.resample(y, orig_freq=sr, new_freq=24000)
