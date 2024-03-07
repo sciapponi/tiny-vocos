@@ -18,7 +18,7 @@ wavs = ["/workspace/datasets/speech/LJSpeech-1.1/wavs/LJ006-0018.wav",
 
 model_configs = ["/workspace/projects/sciapponi/tiny-vocos/logs/lj_phinet_128_nfft512/lightning_logs/version_0/",
                     "/workspace/projects/sciapponi/tiny-vocos/logs/xivocos_1.5mb/lightning_logs/version_5/",
-                    "/workspace/projects/sciapponi/tiny-vocos/logs/lj_tfvocos_128_128_bn/lightning_logs/version_2/"]
+                    "/workspace/projects/sciapponi/tiny-vocos/logs/lj_tfvocos_128_128_bn_1_linear_nfft512/lightning_logs/version_0"]
 
 # model = Vocos.from_hparams("/raid/home/e3da/projects/sciapponi/tiny-vocos/logs/lj_phinet_128_nfft512/lightning_logs/version_0/config.yaml")
 
@@ -26,7 +26,7 @@ path = "/home/ste/Datasets/LJSpeech-1.1/wavs/LJ001-0001.wav"
 fe = MelSpectrogramFeatures()
 num_samples = 48384
 
-for idx, conf in enumerate(model_configs):
+for idx, conf in zip(model_configs, ["phinet", "xinet", "convnext"]):
     model = Vocos.from_hparams(f"{conf}/config.yaml")
     checkpoint = torch.load(f"{conf}/checkpoints/last.ckpt")
     model.load_state_dict(checkpoint['state_dict'], strict=False)
