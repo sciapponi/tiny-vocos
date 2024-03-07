@@ -26,7 +26,7 @@ path = "/home/ste/Datasets/LJSpeech-1.1/wavs/LJ001-0001.wav"
 fe = MelSpectrogramFeatures()
 num_samples = 48384
 
-for idx, conf in zip(model_configs, ["phinet", "xinet", "convnext"]):
+for idx, conf in zip(["phinet", "xinet", "convnext"], model_configs):
     model = Vocos.from_hparams(f"{conf}/config.yaml")
     checkpoint = torch.load(f"{conf}/checkpoints/last.ckpt")
     model.load_state_dict(checkpoint['state_dict'], strict=False)
