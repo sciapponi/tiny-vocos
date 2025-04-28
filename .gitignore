@@ -1,2 +1,8 @@
 test_xinet.py
 __pycache__
+venv
+filelist.val
+filelist.train
+logs
+*.ckpt
+*.pt

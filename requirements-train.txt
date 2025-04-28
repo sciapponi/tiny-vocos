@@ -1,7 +1,9 @@
+torch==2.2.0
+numpy==1.26.4
+micromind
 pytorch_lightning==1.8.6
 jsonargparse[signatures]
 transformers
 matplotlib
 torchcrepe
 pesq
-fairseq

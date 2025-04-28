@@ -5,14 +5,14 @@ data:
   class_path: vocos.dataset.VocosDataModule
   init_args:
     train_params:
-      filelist_path: ???
+      filelist_path: filelist.val
       sampling_rate: 24000
       num_samples: 16384
       batch_size: 16
       num_workers: 8
 
     val_params:
-      filelist_path: ???
+      filelist_path: filelist.val
       sampling_rate: 24000
       num_samples: 48384
       batch_size: 16
@@ -45,9 +45,9 @@ model:
     backbone:
       class_path: vocos.models.XiVocosBackboneFixedChannels
       init_args:
-        input_channels: 100
+        freqs: 100
         dim: 512
-        intermediate_dim: 1536
+        #intermediate_dim: 1536
         num_layers: 8
 
     head:
