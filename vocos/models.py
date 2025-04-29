@@ -1,5 +1,5 @@
 from typing import Optional
-from micromind.networks import PhiNetConvBlock
+from phinet import PhiNetConvBlock
 import torch
 from torch import nn
 from torch.nn.utils import weight_norm
@@ -406,3 +406,8 @@ class VocosResNetBackbone(Backbone):
         x = self.resnet(x)
         x = x.transpose(1, 2)
         return x
+    
+
+if __name__=="__main__":
+    model = PhiBackbone(512, 128, 8)
+    print(model)
